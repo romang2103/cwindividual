@@ -25,13 +25,13 @@ class Line(models.Model):
         return self.name
     
     def as_dict(self):
-        return {
+        return {    
             'id': self.id,
             'name': self.name,
             'stations': [station.as_dict() for station in self.stations.all()],
-            'number_of_stations': self.number_of_stations,
-            'available_on_weekend': self.available_on_weekend,
-            'date_created': self.date_created
+            'numberOfStations': self.number_of_stations,
+            'wee': self.available_on_weekend,
+            'dateCreated': self.date_created
         }
 
 class LineStation(models.Model):

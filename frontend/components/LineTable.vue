@@ -6,18 +6,21 @@
                 <th scope="col">Line</th>
                 <th scope="col">Number of Stations</th>
                 <th scope="col">Weekend Availability</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
             <tr v-for="(line, index) in lines">
                 <th scope="row">{{ index + 1 }}</th>
                 <td>{{ line.name }}</td>
+                <td>{{ line.numberOfStations }}</td>
+                <td>{{ line.weekendAvailability ? 'Yes' : 'No'  }}</td>
                 <td>
                     <button
                         class="btn btn-sm btn-primary me-2" 
                         data-bs-toggle="modal" 
                         data-bs-target="#editLineModal"
-                        @click="selectStation(line)"
+                        @click="selectLine(line)"
                     >
                         <i class="bi bi-pencil-square"></i>
                     </button>
@@ -32,18 +35,29 @@
         </tbody>
     </table>
 
-    <!-- Modal -->
+    <!-- Edit Line Modal -->
     <div class="modal fade" id="editLineModal" tabindex="-1" aria-labelledby="editLineModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="editLineModalLabel">Add Line</h1>
+                    <h1 class="modal-title fs-5" id="editLineModalLabel">Edit Line</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="name" class="form-label">Name</label>
                         <input v-model="updatedLine.name" type="text" class="form-control" id="name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Number of Stations</label>
+                        <input v-model="updatedLine.numberOfStations" type="text" class="form-control" id="numberOfStations">
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Available on Weekends</label>
+                        <select v-model="updatedLine.weekendAvailability" class="form-control" id="weekendAvailability">
+                            <option :value="true">Yes</option>
+                            <option :value="false">No</option>
+                        </select>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -77,6 +91,7 @@
         methods: {
             selectLine(line) {
                 this.updatedLine = { ...line }
+                console.log(this.updatedLine)
             },
         }
     }

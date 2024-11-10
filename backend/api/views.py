@@ -64,7 +64,35 @@ def lines_api(request):
                 line.as_dict() for line in Line.objects.all()
             ]
         })
-    elif request.method == 'POST':
-        pass
+        
+    if request.method == 'POST':
+        # Create a new line
+        POST = json.loads(request.body)
+        line = Line.objects.create(
+            name=POST['name'],
+            number_of_stations=POST['numberOfStations'],
+            available_on_weekend=POST['weekendAvailability']
+        )
+        return JsonResponse(line.as_dict())
     
+    # Return a 405 Method Not Allowed response for all other request methods
     return HttpResponse(status=405)
+
+
+def line_api(request, line_id):
+    """API endpoint for a single line"""
+    line = Line.objects.get(id=line_id)
+    
+    if request.method == 'PUT':
+        PUT = json.loads(request.body)
+        line.name = PUT['name']
+        line.number_of_stations = PUT['numberOfStations']
+        line.available_on_weekend = PUT['weekendAvailability']
+        line.save()
+        return JsonResponse(line.as_dict())
+
+    if request.method == 'DELETE':
+        line.delete()
+        return JsonResponse({})
+
+    return JsonResponse(line.as_dict())
