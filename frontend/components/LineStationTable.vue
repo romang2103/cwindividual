@@ -106,6 +106,7 @@
             }
         },
         methods: {
+            // Populate the updatedLineStation object with the selected lineStation
             selectLineStation(lineStation) {
                 this.updatedLineStation = { ...lineStation }
             },

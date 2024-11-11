@@ -89,9 +89,9 @@
             }
         },
         methods: {
+            // Populate the updatedLine object with the selected line
             selectLine(line) {
                 this.updatedLine = { ...line }
-                console.log(this.updatedLine)
             },
         }
     }

@@ -199,10 +199,8 @@
         methods: {
             // Fetch data for each type
             async fetchData(type) {
-                console.log('fetching data for', type)
                 const data = await fetch(`${baseUrl}/api/${type}`);
                 const response = await data.json();
-                console.log('data: ', response)
                 return response ? response[type] : [];
             },
             // Modular fetch request method for all CRUD operations
@@ -244,11 +242,8 @@
 
                         // Remove associated lineStations entries without re-fetching (approach 2 - more lines of code, but avoids re-fetching, which is more efficient)
                         if (type === 'station') {
-                            console.log('filtering stations')
-                            console.log(this.lineStations)
                             this.lineStations = this.lineStations.filter(ls => ls.station.id !== item.id);
                         } else if (type === 'line') {
-                            console.log('filtering lines')
                             this.lineStations = this.lineStations.filter(ls => ls.line.id !== item.id);
                         }
                     }

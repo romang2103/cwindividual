@@ -1,25 +1,18 @@
 import json
-
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
-
 from .models import Station, Line, LineStation
-
-def test(request):
-    return JsonResponse({
-            'stations': [
-                station.as_dict() for station in Station.objects.all()
-            ],
-            # 'lines': [
-            #     line.as_dict() for line in Line.objects.all()
-            # ]
-        })
 
 
 def stations_api(request):
-    """API endpoint for the collection of stations"""
+    """
+    API endpoint for the collection of stations
+    
+    Supports GET and POST methods
+    """
     
     if request.method == 'GET':
+        # Retrieve and return all stations as JSON
         return JsonResponse({
             'stations': [
                 station.as_dict() for station in Station.objects.all()
@@ -27,7 +20,7 @@ def stations_api(request):
         })
 
     elif request.method == 'POST':
-        # Create a new station
+        # Create a new station item
         POST = json.loads(request.body)
         station = Station.objects.create(
             name=POST['name'],
@@ -39,26 +32,39 @@ def stations_api(request):
 
 
 def station_api(request, station_id):
-    """API endpoint for a single computer"""
+    """
+    API endpoint for handling operations on a single station
+    
+    Supports PUT, and DELETE methods
+    """
+    
     station = Station.objects.get(id=station_id)
-    print("Station to delete: ", station)
 
     if request.method == 'PUT':
+        # Update station attributes and save changes
         PUT = json.loads(request.body)
         station.name = PUT['name']
         station.save()
         return JsonResponse(station.as_dict())
 
     if request.method == 'DELETE':
+        # Delete the station
         station.delete()
         return JsonResponse({})
 
+    # Default response is the station data in JSON format
     return JsonResponse(station.as_dict())
 
 
 def lines_api(request):
-    """API endpoint for the collection of lines"""
+    """
+    API endpoint for the collection of lines
+    
+    Supports GET and POST methods
+    """
+    
     if request.method == 'GET':
+        # Retrieve and return all lines as JSON
         return JsonResponse({
             'lines': [
                 line.as_dict() for line in Line.objects.all()
@@ -80,10 +86,16 @@ def lines_api(request):
 
 
 def line_api(request, line_id):
-    """API endpoint for a single line"""
+    """
+    API endpoint for handling operations on a single line
+    
+    Supports PUT, and DELETE methods
+    """
+    
     line = Line.objects.get(id=line_id)
     
     if request.method == 'PUT':
+        # Update line attributes and save changes
         PUT = json.loads(request.body)
         line.name = PUT['name']
         line.number_of_stations = PUT['numberOfStations']
@@ -92,14 +104,19 @@ def line_api(request, line_id):
         return JsonResponse(line.as_dict())
 
     if request.method == 'DELETE':
+        # Delete the line
         line.delete()
         return JsonResponse({})
 
+    # Default response is the line data in JSON format
     return JsonResponse(line.as_dict())
 
 def line_stations_api(request):
-    """API endpoint for the collection of line-stations"""
-    print('line_stations_api')
+    """
+    API endpoint for the collection of line-stations
+    
+    Supports GET and POST methods
+    """
     
     if request.method == 'GET':
         return JsonResponse({
@@ -125,7 +142,12 @@ def line_stations_api(request):
     return HttpResponse(status=405)
 
 def line_station_api(request, line_station_id):
-    """API endpoint for a single line-station item"""
+    """
+    API endpoint for handling operations on a single line-station item
+    
+    Supports PUT, and DELETE methods
+    """
+    
     line_station = LineStation.objects.get(id=line_station_id)
     
     if request.method == 'PUT':
