@@ -191,127 +191,200 @@
             }
         }, 
         async mounted() {
-            const stations_response = await fetch(`${baseUrl}/api/stations`)
-            const stations_data = await stations_response.json()
-            this.stations = stations_data.stations;
+            // const stations_response = await fetch(`${baseUrl}/api/stations`)
+            // const stations_data = await stations_response.json()
+            // this.stations = stations_data.stations;
 
-            const lines_response = await fetch(`${baseUrl}/api/lines`)
-            const lines_data = await lines_response.json()
-            this.lines = lines_data.lines;
+            // const lines_response = await fetch(`${baseUrl}/api/lines`)
+            // const lines_data = await lines_response.json()
+            // this.lines = lines_data.lines;
 
-            const lineStations_response = await fetch(`${baseUrl}/api/line-stations`)
-            const lineStations_data = await lineStations_response.json()
-            this.lineStations = lineStations_data.lineStations;
+            // const lineStations_response = await fetch(`${baseUrl}/api/line-stations`)
+            // const lineStations_data = await lineStations_response.json()
+            // this.lineStations = lineStations_data.lineStations;
+            this.stations = await this.fetchData('stations');
+            this.lines = await this.fetchData('lines');
+            this.lineStations = await this.fetchData('line-stations'); 
         },
 
         methods: {
-            async deleteStation(station) {
-                if (confirm('Are you sure you want to delete this station?')) {
-                    const response = await fetch(`${baseUrl}/api/station/${station.id}/`, {
-                        method: 'DELETE'
-                    })
-                    if (response.ok) {
-                        this.stations = this.stations.filter(s => s.id !== station.id)
+            // Fetch data for each type
+            async fetchData(type) {
+                console.log('fetching data for', type)
+                const data = await fetch(`${baseUrl}/api/${type}`);
+                const response = await data.json();
+                console.log('data: ', response)
+                return response ? response[type] : [];
+            },
+            // Modular fetch request method for all CRUD operations
+            async fetchRequest(url, method = 'GET', body = null) {
+                const params = { method }
+                if (body) {
+                    params.headers = { 'Content-Type': 'application/json' }
+                    params.body = JSON.stringify(body)
+                }
+                const response = await fetch(url, params)
+                return response.ok ? response.json() : null;
+            },
+            // Generalized create method
+            async createItem(type, collection, newItem) {
+                const data = await this.fetchRequest(`${baseUrl}/api/${type}/`, 'POST', newItem);
+                if (data) {
+                    this[collection].push(data);
+                }
+            },
+            // Generalized edit method
+            async editItem(type, collection, item) {
+                const response = await this.fetchRequest(`${baseUrl}/api/${type}/${item.id}/`, 'PUT', item);
+                if (response) {
+                    const index = this[collection].findIndex(i => i.id === item.id);
+                    this[collection].splice(index, 1, item);
+                }
+            },
+            // Generalized delete method
+            async deleteItem(type, collection, item) {
+                if (confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) {
+                    const response = await this.fetchRequest(`${baseUrl}/api/${type}/${item.id}/`, 'DELETE');
+                    if (response) {
+                        this[collection] = this[collection].filter(i => i.id !== item.id);
                     }
                 }
             },
-            async deleteLine(line) {
-                console.log('delete line', line)
-                if (confirm('Are you sure you want to delete this line?')) {
-                    const response = await fetch(`${baseUrl}/api/line/${line.id}/`, {
-                        method: 'DELETE'
-                    })
-                    if (response.ok) {
-                        this.lines = this.lines.filter(l => l.id !== line.id)
-                    }
-                }
+            // Specific methods calling generalized methods with the right parameters
+            createStation() {
+                this.createItem('stations', 'stations', this.newStation);
             },
-            async createStation() {
-                console.log(this.newStation)
-                const response = await fetch(`${baseUrl}/api/stations/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(this.newStation)
-                })
-                const newStation = await response.json()
-                this.stations.push(newStation)
+            createLine() {
+                this.createItem('lines', 'lines', this.newLine);
             },
-            async editStation(station) {
-                const response = await fetch(`${baseUrl}/api/station/${station.id}/`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(station)
-                })
-                if (response.ok) {
-                    const index = this.stations.findIndex(s => s.id === station.id)
-                    this.stations.splice(index, 1, station)
-                }
+            createLineStation() {
+                this.createItem('line-stations', 'lineStations', this.newLineStation);
             },
-            async editLine(line) {
-                const response = await fetch(`${baseUrl}/api/line/${line.id}/`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(line)
-                })
-                if (response.ok) {
-                    const index = this.lines.findIndex(l => l.id === line.id)
-                    this.lines.splice(index, 1, line)
-                }
+            editStation(station) {
+                this.editItem('station', 'stations', station);
             },
-            async createLine() {
-                const response = await fetch(`${baseUrl}/api/lines/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(this.newLine)
-                })
-                const newLine = await response.json()
-                this.lines.push(newLine)
+            editLine(line) {
+                this.editItem('line', 'lines', line);
             },
-            async createLineStation() {
-                const response = await fetch(`${baseUrl}/api/line-stations/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(this.newLineStation)
-                })
-                const newLineStation = await response.json()
-                console.log("new line station: ", newLineStation)
-                this.lineStations.push(newLineStation)
+            editLineStation(lineStation) {
+                this.editItem('line-station', 'lineStations', lineStation);
             },
-            async editLineStation(lineStation) {
-                console.log('edit line station', lineStation)
-                const response = await fetch(`${baseUrl}/api/line-station/${lineStation.id}/`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(lineStation)
-                })
-                if (response.ok) {
-                    const index = this.lineStations.findIndex(ls => ls.id === lineStation.id)
-                    this.lineStations.splice(index, 1, lineStation)
-                }
+            deleteStation(station) {
+                this.deleteItem('station', 'stations', station);
             },
-            async deleteLineStation(lineStation) {
-                console.log('delete line station', lineStation)
-                if (confirm('Are you sure you want to delete this line-station?')) {
-                    const response = await fetch(`${baseUrl}/api/line-station/${lineStation.id}/`, {
-                        method: 'DELETE'
-                    })
-                    if (response.ok) {
-                        this.lineStations = this.lineStations.filter(ls => ls.id !== lineStation.id)
-                    }
-                }
+            deleteLine(line) {
+                this.deleteItem('line', 'lines', line);
+            },
+            deleteLineStation(lineStation) {
+                this.deleteItem('line-station', 'lineStations', lineStation);
             }
+            // async deleteStation(station) {
+            //     if (confirm('Are you sure you want to delete this station?')) {
+            //         const response = await fetch(`${baseUrl}/api/station/${station.id}/`, {
+            //             method: 'DELETE'
+            //         })
+            //         if (response.ok) {
+            //             this.stations = this.stations.filter(s => s.id !== station.id)
+            //         }
+            //     }
+            // },
+            // async deleteLine(line) {
+            //     console.log('delete line', line)
+            //     if (confirm('Are you sure you want to delete this line?')) {
+            //         const response = await fetch(`${baseUrl}/api/line/${line.id}/`, {
+            //             method: 'DELETE'
+            //         })
+            //         if (response.ok) {
+            //             this.lines = this.lines.filter(l => l.id !== line.id)
+            //         }
+            //     }
+            // },
+            // async createStation() {
+            //     console.log(this.newStation)
+            //     const response = await fetch(`${baseUrl}/api/stations/`, {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         },
+            //         body: JSON.stringify(this.newStation)
+            //     })
+            //     const newStation = await response.json()
+            //     this.stations.push(newStation)
+            // },
+            // async editStation(station) {
+            //     const response = await fetch(`${baseUrl}/api/station/${station.id}/`, {
+            //         method: 'PUT',
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         },
+            //         body: JSON.stringify(station)
+            //     })
+            //     if (response.ok) {
+            //         const index = this.stations.findIndex(s => s.id === station.id)
+            //         this.stations.splice(index, 1, station)
+            //     }
+            // },
+            // async editLine(line) {
+            //     const response = await fetch(`${baseUrl}/api/line/${line.id}/`, {
+            //         method: 'PUT',
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         },
+            //         body: JSON.stringify(line)
+            //     })
+            //     if (response.ok) {
+            //         const index = this.lines.findIndex(l => l.id === line.id)
+            //         this.lines.splice(index, 1, line)
+            //     }
+            // },
+            // async createLine() {
+            //     const response = await fetch(`${baseUrl}/api/lines/`, {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         },
+            //         body: JSON.stringify(this.newLine)
+            //     })
+            //     const newLine = await response.json()
+            //     this.lines.push(newLine)
+            // },
+            // async createLineStation() {
+            //     const response = await fetch(`${baseUrl}/api/line-stations/`, {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         },
+            //         body: JSON.stringify(this.newLineStation)
+            //     })
+            //     const newLineStation = await response.json()
+            //     console.log("new line station: ", newLineStation)
+            //     this.lineStations.push(newLineStation)
+            // },
+            // async editLineStation(lineStation) {
+            //     console.log('edit line station', lineStation)
+            //     const response = await fetch(`${baseUrl}/api/line-station/${lineStation.id}/`, {
+            //         method: 'PUT',
+            //         headers: {
+            //             'Content-Type': 'application/json'
+            //         },
+            //         body: JSON.stringify(lineStation)
+            //     })
+            //     if (response.ok) {
+            //         const index = this.lineStations.findIndex(ls => ls.id === lineStation.id)
+            //         this.lineStations.splice(index, 1, lineStation)
+            //     }
+            // },
+            // async deleteLineStation(lineStation) {
+            //     console.log('delete line station', lineStation)
+            //     if (confirm('Are you sure you want to delete this line-station?')) {
+            //         const response = await fetch(`${baseUrl}/api/line-station/${lineStation.id}/`, {
+            //             method: 'DELETE'
+            //         })
+            //         if (response.ok) {
+            //             this.lineStations = this.lineStations.filter(ls => ls.id !== lineStation.id)
+            //         }
+            //     }
+            // }
         }
     }
 </script>

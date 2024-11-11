@@ -103,7 +103,7 @@ def line_stations_api(request):
     
     if request.method == 'GET':
         return JsonResponse({
-            'lineStations': [
+            'line-stations': [
                 line_station.as_dict() for line_station in LineStation.objects.all()
             ]
         })
