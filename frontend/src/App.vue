@@ -25,8 +25,8 @@
                 <!-- Station Table -->
                 <StationTable
                     :stations="stations"
-                    @delete-station="deleteStation"
-                    @edit-station="editStation"
+                    @delete-station="deleteItem('station', 'stations', $event)"
+                    @edit-station="editItem('station', 'stations', $event)"
                 />
             </div>
             <div class="tab-pane fade" id="nav-lines" role="tabpanel" aria-labelledby="nav-lines-tab">
@@ -38,8 +38,8 @@
                 <!-- Line Table -->
                 <LineTable
                     :lines="lines"
-                    @delete-line="deleteLine"
-                    @edit-line="editLine"
+                    @delete-line="deleteItem('line', 'lines', $event)"
+                    @edit-line="editItem('line', 'lines', $event)"
                 />
             </div>
             <div class="tab-pane fade" id="nav-lineStations" role="tabpanel" aria-labelledby="nav-lineStations-tab">
@@ -53,8 +53,8 @@
                     :lineStations="lineStations"
                     :lines="lines"
                     :stations="stations"
-                    @delete-line-station="deleteLineStation"
-                    @edit-line-station="editLineStation"
+                    @delete-line-station="deleteItem('line-station', 'lineStations', $event)"
+                    @edit-line-station="editItem('line-station', 'lineStations', $event)"
                 />
             </div>
         </div>
@@ -75,7 +75,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" @click="createStation" data-bs-dismiss="modal">Save</button>
+                        <button type="button" class="btn btn-primary" @click="createItem('stations', 'stations', newStation)" data-bs-dismiss="modal">Save</button>
                     </div>
                 </div>
             </div>
@@ -108,7 +108,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" @click="createLine" data-bs-dismiss="modal">Save</button>
+                        <button type="button" class="btn btn-primary" @click="createItem('lines', 'lines', newLine)" data-bs-dismiss="modal">Save</button>
                     </div>
                 </div>
             </div>
@@ -146,7 +146,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" @click="createLineStation" data-bs-dismiss="modal">Save</button>
+                        <button type="button" class="btn btn-primary" @click="createItem('line-stations', 'lineStations', newLineStation)" data-bs-dismiss="modal">Save</button>
                     </div>
                 </div>
             </div>
@@ -191,17 +191,6 @@
             }
         }, 
         async mounted() {
-            // const stations_response = await fetch(`${baseUrl}/api/stations`)
-            // const stations_data = await stations_response.json()
-            // this.stations = stations_data.stations;
-
-            // const lines_response = await fetch(`${baseUrl}/api/lines`)
-            // const lines_data = await lines_response.json()
-            // this.lines = lines_data.lines;
-
-            // const lineStations_response = await fetch(`${baseUrl}/api/line-stations`)
-            // const lineStations_data = await lineStations_response.json()
-            // this.lineStations = lineStations_data.lineStations;
             this.stations = await this.fetchData('stations');
             this.lines = await this.fetchData('lines');
             this.lineStations = await this.fetchData('line-stations'); 
@@ -224,7 +213,7 @@
                     params.body = JSON.stringify(body)
                 }
                 const response = await fetch(url, params)
-                return response.ok ? response.json() : null;
+                return response.ok ? response.json() : {};
             },
             // Generalized create method
             async createItem(type, collection, newItem) {
@@ -239,6 +228,11 @@
                 if (response) {
                     const index = this[collection].findIndex(i => i.id === item.id);
                     this[collection].splice(index, 1, item);
+
+                    // Refetch lineStations data to capture changes (approach 1 - less lines of code, but requires re-fetching)
+                    if (type === 'station' || type === 'line') {
+                        this.lineStations = await this.fetchData('line-stations');
+                    }
                 }
             },
             // Generalized delete method
@@ -247,144 +241,19 @@
                     const response = await this.fetchRequest(`${baseUrl}/api/${type}/${item.id}/`, 'DELETE');
                     if (response) {
                         this[collection] = this[collection].filter(i => i.id !== item.id);
+
+                        // Remove associated lineStations entries without re-fetching (approach 2 - more lines of code, but avoids re-fetching, which is more efficient)
+                        if (type === 'station') {
+                            console.log('filtering stations')
+                            console.log(this.lineStations)
+                            this.lineStations = this.lineStations.filter(ls => ls.station.id !== item.id);
+                        } else if (type === 'line') {
+                            console.log('filtering lines')
+                            this.lineStations = this.lineStations.filter(ls => ls.line.id !== item.id);
+                        }
                     }
                 }
             },
-            // Specific methods calling generalized methods with the right parameters
-            createStation() {
-                this.createItem('stations', 'stations', this.newStation);
-            },
-            createLine() {
-                this.createItem('lines', 'lines', this.newLine);
-            },
-            createLineStation() {
-                this.createItem('line-stations', 'lineStations', this.newLineStation);
-            },
-            editStation(station) {
-                this.editItem('station', 'stations', station);
-            },
-            editLine(line) {
-                this.editItem('line', 'lines', line);
-            },
-            editLineStation(lineStation) {
-                this.editItem('line-station', 'lineStations', lineStation);
-            },
-            deleteStation(station) {
-                this.deleteItem('station', 'stations', station);
-            },
-            deleteLine(line) {
-                this.deleteItem('line', 'lines', line);
-            },
-            deleteLineStation(lineStation) {
-                this.deleteItem('line-station', 'lineStations', lineStation);
-            }
-            // async deleteStation(station) {
-            //     if (confirm('Are you sure you want to delete this station?')) {
-            //         const response = await fetch(`${baseUrl}/api/station/${station.id}/`, {
-            //             method: 'DELETE'
-            //         })
-            //         if (response.ok) {
-            //             this.stations = this.stations.filter(s => s.id !== station.id)
-            //         }
-            //     }
-            // },
-            // async deleteLine(line) {
-            //     console.log('delete line', line)
-            //     if (confirm('Are you sure you want to delete this line?')) {
-            //         const response = await fetch(`${baseUrl}/api/line/${line.id}/`, {
-            //             method: 'DELETE'
-            //         })
-            //         if (response.ok) {
-            //             this.lines = this.lines.filter(l => l.id !== line.id)
-            //         }
-            //     }
-            // },
-            // async createStation() {
-            //     console.log(this.newStation)
-            //     const response = await fetch(`${baseUrl}/api/stations/`, {
-            //         method: 'POST',
-            //         headers: {
-            //             'Content-Type': 'application/json'
-            //         },
-            //         body: JSON.stringify(this.newStation)
-            //     })
-            //     const newStation = await response.json()
-            //     this.stations.push(newStation)
-            // },
-            // async editStation(station) {
-            //     const response = await fetch(`${baseUrl}/api/station/${station.id}/`, {
-            //         method: 'PUT',
-            //         headers: {
-            //             'Content-Type': 'application/json'
-            //         },
-            //         body: JSON.stringify(station)
-            //     })
-            //     if (response.ok) {
-            //         const index = this.stations.findIndex(s => s.id === station.id)
-            //         this.stations.splice(index, 1, station)
-            //     }
-            // },
-            // async editLine(line) {
-            //     const response = await fetch(`${baseUrl}/api/line/${line.id}/`, {
-            //         method: 'PUT',
-            //         headers: {
-            //             'Content-Type': 'application/json'
-            //         },
-            //         body: JSON.stringify(line)
-            //     })
-            //     if (response.ok) {
-            //         const index = this.lines.findIndex(l => l.id === line.id)
-            //         this.lines.splice(index, 1, line)
-            //     }
-            // },
-            // async createLine() {
-            //     const response = await fetch(`${baseUrl}/api/lines/`, {
-            //         method: 'POST',
-            //         headers: {
-            //             'Content-Type': 'application/json'
-            //         },
-            //         body: JSON.stringify(this.newLine)
-            //     })
-            //     const newLine = await response.json()
-            //     this.lines.push(newLine)
-            // },
-            // async createLineStation() {
-            //     const response = await fetch(`${baseUrl}/api/line-stations/`, {
-            //         method: 'POST',
-            //         headers: {
-            //             'Content-Type': 'application/json'
-            //         },
-            //         body: JSON.stringify(this.newLineStation)
-            //     })
-            //     const newLineStation = await response.json()
-            //     console.log("new line station: ", newLineStation)
-            //     this.lineStations.push(newLineStation)
-            // },
-            // async editLineStation(lineStation) {
-            //     console.log('edit line station', lineStation)
-            //     const response = await fetch(`${baseUrl}/api/line-station/${lineStation.id}/`, {
-            //         method: 'PUT',
-            //         headers: {
-            //             'Content-Type': 'application/json'
-            //         },
-            //         body: JSON.stringify(lineStation)
-            //     })
-            //     if (response.ok) {
-            //         const index = this.lineStations.findIndex(ls => ls.id === lineStation.id)
-            //         this.lineStations.splice(index, 1, lineStation)
-            //     }
-            // },
-            // async deleteLineStation(lineStation) {
-            //     console.log('delete line station', lineStation)
-            //     if (confirm('Are you sure you want to delete this line-station?')) {
-            //         const response = await fetch(`${baseUrl}/api/line-station/${lineStation.id}/`, {
-            //             method: 'DELETE'
-            //         })
-            //         if (response.ok) {
-            //             this.lineStations = this.lineStations.filter(ls => ls.id !== lineStation.id)
-            //         }
-            //     }
-            // }
         }
     }
 </script>
