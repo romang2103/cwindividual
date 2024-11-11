@@ -30,11 +30,12 @@ class Line(models.Model):
             'name': self.name,
             'stations': [station.as_dict() for station in self.stations.all()],
             'numberOfStations': self.number_of_stations,
-            'wee': self.available_on_weekend,
+            'weekendAvailability': self.available_on_weekend,
             'dateCreated': self.date_created
         }
 
 class LineStation(models.Model):
+    id = models.AutoField(primary_key=True)
     station = models.ForeignKey(Station, on_delete=models.CASCADE)
     line = models.ForeignKey(Line, on_delete=models.CASCADE)
     order = models.PositiveIntegerField()
@@ -43,3 +44,12 @@ class LineStation(models.Model):
     
     def __str__(self):
         return f"{self.line} - {self.station} - {self.order}"
+    
+    def as_dict(self):
+        return {
+            'id': self.id,  
+            'station': self.station.as_dict(),
+            'line': self.line.as_dict(),
+            'order': self.order,
+            'notes': self.notes
+        }
